@@ -22,11 +22,13 @@ class ExtractArchiveResult:
 
 @dataclass
 class ParsedPath:
+    user_input: str
+    abspath: str
     extension: str
     basepath: str
     extract_command: str
     basedir: str
-    abspath: str
+    extractedpath: Optional[str] = None
 
 
 @contextmanager
@@ -47,12 +49,6 @@ def scantree(path, follow_symlinks=False):
             yield entry
 
 
-# Returns paths sorted in ascending time (oldest first)
-def scantree_mtime(path):
-    entries = list(scantree(path))
-    return sorted(entries, key=lambda x: x.stat().st_mtime)
-
-
 def parse_path(path) -> Optional[ParsedPath]:
     m = {
         ".zip": "unzip",
@@ -66,20 +62,36 @@ def parse_path(path) -> Optional[ParsedPath]:
 
     for ext, cmd in m.items():
         if path.endswith(ext):
-            return ParsedPath(extension=ext, extract_command=cmd,
+            return ParsedPath(user_input=path,
+                              abspath=os.path.abspath(path),
+                              extension=ext,
+                              extract_command=cmd,
                               basepath=os.path.basename(path).rstrip(ext),
-                              basedir=os.path.dirname(os.path.abspath(path)),
-                              abspath=os.path.abspath(path))
+                              basedir=os.path.dirname(os.path.abspath(path)))
     return None
 
 
-def extract_to_temp(parsed: ParsedPath) -> str:
+def extract_to_temp(parsed: ParsedPath):
     extract_dir = os.path.join(parsed.basedir, parsed.basepath + "." + time.strftime("%Y%m%dT%H%M%S"))
     assert not os.path.exists(extract_dir)
     os.makedirs(extract_dir)
     with cwd(extract_dir):
         subprocess.check_output(parsed.extract_command.split() + [parsed.abspath])
-    return extract_dir
+    parsed.extractedpath = extract_dir
+
+
+def outer_dir_check(parsed: ParsedPath):
+    """If path contains a single directory, move all files in that directory up
+    a level and then remove the single directory."""
+    if parsed.extractedpath is None:
+        raise
+    contents = os.listdir(parsed.extractedpath)
+    if len(contents) == 1:
+        candidate = os.path.join(parsed.basedir, contents[0])
+        if not os.path.exists(candidate):
+            os.rename(os.path.join(parsed.extractedpath, contents[0]), candidate)
+            os.rmdir(parsed.extractedpath)
+            parsed.extractedpath = candidate
 
 
 def extract_archive(path) -> ExtractArchiveResult:
@@ -88,8 +100,12 @@ def extract_archive(path) -> ExtractArchiveResult:
         print(f"encountered an error while extracting: {path}, skipping")
         raise Exception("TODO: figure out return failure here.")
     print(parsed)
-    temp_dir = extract_to_temp(parsed)
-    print("extracted to:", temp_dir)
+    extract_to_temp(parsed)
+    print(parsed)
+    outer_dir_check(parsed)
+    print(parsed)
+    # filecount = get_file_count(temp_dir)
+
     return ExtractArchiveResult(finaldir="TODO", filecount=0)
 
 
