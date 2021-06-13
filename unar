@@ -94,6 +94,10 @@ def outer_dir_check(parsed: ParsedPath):
             parsed.extractedpath = candidate
 
 
+def get_file_count(path):
+    return len(list(scantree(path)))
+
+
 def extract_archive(path) -> ExtractArchiveResult:
     parsed = parse_path(path)
     if parsed is None:
@@ -104,9 +108,10 @@ def extract_archive(path) -> ExtractArchiveResult:
     print(parsed)
     outer_dir_check(parsed)
     print(parsed)
-    # filecount = get_file_count(temp_dir)
 
-    return ExtractArchiveResult(finaldir="TODO", filecount=0)
+    finaldir = os.path.basename(parsed.extractedpath)
+    filecount = get_file_count(parsed.extractedpath)
+    return ExtractArchiveResult(finaldir=finaldir, filecount=filecount)
 
 
 def parse_args():
