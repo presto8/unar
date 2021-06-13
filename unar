@@ -1,0 +1,53 @@
+#!/usr/bin/env python
+
+import argparse
+import os
+import sys
+
+
+class Fail(Exception):
+    pass
+
+
+def scantree(path, follow_symlinks=False):
+    for entry in os.scandir(path):
+        if entry.is_dir(follow_symlinks=follow_symlinks):
+            yield from scantree(entry.path, follow_symlinks=follow_symlinks)
+        else:
+            yield entry
+
+
+# Returns paths sorted in ascending time (oldest first)
+def scantree_mtime(path):
+    entries = list(scantree(path))
+    return sorted(entries, key=lambda x: x.stat().st_mtime)
+
+
+def parse_args():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('files', nargs='+', help='extract to exrtact')
+    parser.add_argument('--verbose', default=False, action='store_true', help='show more detailed messages')
+    parser.add_argument('--flag', default=False, action='store_true', help='set a flag')
+    return parser.parse_args()
+
+
+def worker(path):
+    if path == 'fail':
+        raise Fail('test of a failure')
+    print(path)
+
+
+def main():
+    for path in ARGS.files:
+        worker(path)
+
+
+if __name__ == '__main__':
+    try:
+        ARGS = parse_args()
+        main()
+    except Fail as f:
+        print(*f.args, file=sys.stderr)
+        sys.exit(1)
+    except KeyboardInterrupt:
+        print("Ctrl+C")
