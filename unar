@@ -118,7 +118,7 @@ def cull(parsed: ParsedPath):
         head, tail = os.path.split(path.path)
         parents = head.split('/')
 
-        if tail == 'Thumbs.db':
+        if tail in "desktop.ini Thumbs.db .DS_Store":
             pass
         elif '__MACOSX' in parents:
             pass
