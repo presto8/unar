@@ -29,6 +29,7 @@ class ParsedPath:
     extract_command: str
     basedir: str
     extractedpath: Optional[str] = None
+    culled_count: int = 0
 
 
 @contextmanager
@@ -110,6 +111,16 @@ def get_file_count(path):
     return len(list(scantree(path)))
 
 
+def cull(parsed: ParsedPath):
+    if ARGS.cull is False:
+        return
+    for path in scantree(parsed.extractedpath):
+        if "/__MACOSX/" in path.path:
+            print(f"culled: {path.path}")
+            os.remove(path)
+            parsed.culled_count += 1
+
+
 def extract_archive(path) -> ExtractArchiveResult:
     parsed = parse_path(path)
     if parsed is None:
@@ -118,6 +129,7 @@ def extract_archive(path) -> ExtractArchiveResult:
 
     extract_to_temp(parsed)
     outer_dir_check(parsed)
+    cull(parsed)
 
     finaldir = os.path.basename(none_throws(parsed.extractedpath))
     filecount = get_file_count(parsed.extractedpath)
@@ -128,6 +140,7 @@ def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('files', nargs='+', help='archive files to extract')
     parser.add_argument('--verbose', default=False, action='store_true', help='show more detailed messages')
+    parser.add_argument('--cull', default=False, action='store_true', help='cull unwanted files (__MACOSX, ...)')
     return parser.parse_args()
 
 
