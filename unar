@@ -138,14 +138,14 @@ def extract_archive(path) -> ExtractArchiveResult:
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument('files', nargs='+', help='archive files to extract')
+    parser.add_argument('archive', nargs='+', help='path of archive to extract')
     parser.add_argument('--verbose', default=False, action='store_true', help='show more detailed messages')
-    parser.add_argument('--cull', default=False, action='store_true', help='cull unwanted files (__MACOSX, ...)')
+    parser.add_argument('--cull', default=False, action='store_true', help='cull unwanted files when extracting archives (__MACOSX, ...)')
     return parser.parse_args()
 
 
 def main():
-    for path in ARGS.files:
+    for path in ARGS.archive:
         result = extract_archive(path)
         print(f"{path} -> {result.finaldir} [{result.filecount} files]")
 
