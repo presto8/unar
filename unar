@@ -103,12 +103,11 @@ def extract_archive(path) -> ExtractArchiveResult:
     if parsed is None:
         print(f"encountered an error while extracting: {path}, skipping")
         raise Exception("TODO: figure out return failure here.")
-    print(parsed)
-    extract_to_temp(parsed)
-    print(parsed)
-    outer_dir_check(parsed)
-    print(parsed)
 
+    extract_to_temp(parsed)
+    outer_dir_check(parsed)
+
+    assert parsed.extractedpath  # to get rid of type warning below
     finaldir = os.path.basename(parsed.extractedpath)
     filecount = get_file_count(parsed.extractedpath)
     return ExtractArchiveResult(finaldir=finaldir, filecount=filecount)
