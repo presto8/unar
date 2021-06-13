@@ -2,7 +2,10 @@
 
 import argparse
 import os
+import subprocess
 import sys
+import time
+from contextlib import contextmanager
 from dataclasses import dataclass
 from typing import Union
 
@@ -24,6 +27,16 @@ class ParsedPath:
     extract_command: str
     basedir: str
     abspath: str
+
+
+@contextmanager
+def cwd(path):
+    oldpwd = os.getcwd()
+    try:
+        os.chdir(path)
+        yield
+    finally:
+        os.chdir(oldpwd)
 
 
 def scantree(path, follow_symlinks=False):
@@ -60,9 +73,20 @@ def parse_path(path) -> Union[ParsedPath, None]:
     return None
 
 
+def extract_to_temp(parsed: ParsedPath) -> str:
+    extract_dir = os.path.join(parsed.basedir, parsed.basepath + "." + time.strftime("%Y%m%dT%H%M%S"))
+    assert not os.path.exists(extract_dir)
+    os.makedirs(extract_dir)
+    with cwd(extract_dir):
+        subprocess.check_output(parsed.extract_command.split() + [parsed.abspath])
+    return extract_dir
+
+
 def extract_archive(path) -> ExtractArchiveResult:
     parsed = parse_path(path)
     print(parsed)
+    temp_dir = extract_to_temp(parsed)
+    print("extracted to:", temp_dir)
     return ExtractArchiveResult(finaldir="TODO", filecount=0)
 
 
