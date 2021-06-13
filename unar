@@ -7,7 +7,7 @@ import sys
 import time
 from contextlib import contextmanager
 from dataclasses import dataclass
-from typing import Union
+from typing import Optional
 
 
 class Fail(Exception):
@@ -53,7 +53,7 @@ def scantree_mtime(path):
     return sorted(entries, key=lambda x: x.stat().st_mtime)
 
 
-def parse_path(path) -> Union[ParsedPath, None]:
+def parse_path(path) -> Optional[ParsedPath]:
     m = {
         ".zip": "unzip",
         ".tar": "tar xf",
@@ -84,6 +84,9 @@ def extract_to_temp(parsed: ParsedPath) -> str:
 
 def extract_archive(path) -> ExtractArchiveResult:
     parsed = parse_path(path)
+    if parsed is None:
+        print(f"encountered an error while extracting: {path}, skipping")
+        raise Exception("TODO: figure out return failure here.")
     print(parsed)
     temp_dir = extract_to_temp(parsed)
     print("extracted to:", temp_dir)
