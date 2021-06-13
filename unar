@@ -115,10 +115,19 @@ def cull(parsed: ParsedPath):
     if ARGS.cull is False:
         return
     for path in scantree(parsed.extractedpath):
-        if "/__MACOSX/" in path.path:
-            print(f"culled: {path.path}")
-            os.remove(path)
-            parsed.culled_count += 1
+        head, tail = os.path.split(path.path)
+        parents = head.split('/')
+
+        if tail == 'Thumbs.db':
+            pass
+        elif '__MACOSX' in parents:
+            pass
+        else:
+            continue
+
+        print(f"culled: {path.path}")
+        os.remove(path)
+        parsed.culled_count += 1
 
 
 def extract_archive(path) -> ExtractArchiveResult:
