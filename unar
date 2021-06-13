@@ -3,15 +3,27 @@
 import argparse
 import os
 import sys
-from collections import namedtuple
+from dataclasses import dataclass
+from typing import Union
 
 
 class Fail(Exception):
     pass
 
 
-class ExtractArchiveResult(namedtuple("ExtractArchiveResult", "finaldir filecount")):
-    pass
+@dataclass
+class ExtractArchiveResult:
+    finaldir: str
+    filecount: int
+
+
+@dataclass
+class ParsedPath:
+    extension: str
+    basepath: str
+    extract_command: str
+    basedir: str
+    abspath: str
 
 
 def scantree(path, follow_symlinks=False):
@@ -28,7 +40,29 @@ def scantree_mtime(path):
     return sorted(entries, key=lambda x: x.stat().st_mtime)
 
 
+def parse_path(path) -> Union[ParsedPath, None]:
+    m = {
+        ".zip": "unzip",
+        ".tar": "tar xf",
+        ".tar.bz2": "tar xf",
+        ".tar.gz": "tar xf",
+        ".rar": "unrar x",
+        ".7z": "7z x",
+        ".7zip": "7z x",
+    }
+
+    for ext, cmd in m.items():
+        if path.endswith(ext):
+            return ParsedPath(extension=ext, extract_command=cmd,
+                              basepath=os.path.basename(path).rstrip(ext),
+                              basedir=os.path.dirname(os.path.abspath(path)),
+                              abspath=os.path.abspath(path))
+    return None
+
+
 def extract_archive(path) -> ExtractArchiveResult:
+    parsed = parse_path(path)
+    print(parsed)
     return ExtractArchiveResult(finaldir="TODO", filecount=0)
 
 
