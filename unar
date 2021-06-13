@@ -7,7 +7,7 @@ import sys
 import time
 from contextlib import contextmanager
 from dataclasses import dataclass
-from typing import Optional
+from typing import Optional, TypeVar
 
 
 class Fail(Exception):
@@ -47,6 +47,18 @@ def scantree(path, follow_symlinks=False):
             yield from scantree(entry.path, follow_symlinks=follow_symlinks)
         else:
             yield entry
+
+
+# From: https://github.com/facebook/pyre-check/blob/master/pyre_extensions/__init__.py#L7-L8
+_T = TypeVar("_T")
+
+
+def none_throws(optional: Optional[_T], message: str = "Unexpected `None`") -> _T:
+    """Convert an optional to its value. Raises an `AssertionError` if the
+    value is `None`"""
+    if optional is None:
+        raise AssertionError(message)
+    return optional
 
 
 def parse_path(path) -> Optional[ParsedPath]:
@@ -107,8 +119,7 @@ def extract_archive(path) -> ExtractArchiveResult:
     extract_to_temp(parsed)
     outer_dir_check(parsed)
 
-    assert parsed.extractedpath  # to get rid of type warning below
-    finaldir = os.path.basename(parsed.extractedpath)
+    finaldir = os.path.basename(none_throws(parsed.extractedpath))
     filecount = get_file_count(parsed.extractedpath)
     return ExtractArchiveResult(finaldir=finaldir, filecount=filecount)
 
