@@ -68,6 +68,7 @@ def parse_path(path) -> Optional[ParsedPath]:
         ".tar": "tar xf",
         ".tar.bz2": "tar xf",
         ".tar.gz": "tar xf",
+        ".tar.xz": "tar xf",
         ".rar": "unrar x",
         ".7z": "7z x",
         ".7zip": "7z x",
