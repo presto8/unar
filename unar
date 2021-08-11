@@ -63,7 +63,7 @@ def none_throws(optional: Optional[_T], message: str = "Unexpected `None`") -> _
 
 
 def parse_path(path) -> Optional[ParsedPath]:
-    m = {
+    extensions = {
         ".zip": "unzip",
         ".tar": "tar xf",
         ".tar.bz2": "tar xf",
@@ -74,15 +74,28 @@ def parse_path(path) -> Optional[ParsedPath]:
         ".7zip": "7z x",
     }
 
-    for ext, cmd in m.items():
+    filetypes = {
+        b"Zip archive data": "7z x",
+    }
+
+    for ext, cmd in extensions.items():
         if path.endswith(ext):
-            return ParsedPath(user_input=path,
-                              abspath=os.path.abspath(path),
-                              extension=ext,
-                              extract_command=cmd,
-                              basepath=os.path.basename(path).rstrip(ext),
-                              basedir=os.path.dirname(os.path.abspath(path)))
-    return None
+            break
+    else:
+        # try and guess filetype
+        result = subprocess.run(["file", path], capture_output=True)
+        for type_, cmd in filetypes.items():
+            if type_ in result.stdout:
+                break
+        else:
+            return None
+
+    return ParsedPath(user_input=path,
+                        abspath=os.path.abspath(path),
+                        extension=ext,
+                        extract_command=cmd,
+                        basepath=os.path.basename(path).rstrip(ext),
+                        basedir=os.path.dirname(os.path.abspath(path)))
 
 
 def extract_to_temp(parsed: ParsedPath):
